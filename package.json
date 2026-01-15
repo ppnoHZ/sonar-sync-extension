@@ -60,6 +60,31 @@
           "group": "navigation@2"
         }
       ]
+    },
+    "configuration": {
+      "title": "Sonar Sync",
+      "properties": {
+        "sonar.host": {
+          "type": "string",
+          "default": "",
+          "description": "The URL of the SonarQube/SonarCloud server."
+        },
+        "sonar.token": {
+          "type": "string",
+          "default": "",
+          "description": "The authentication token for SonarQube."
+        },
+        "sonar.projectKey": {
+          "type": "string",
+          "default": "",
+          "description": "The project key in SonarQube."
+        },
+        "sonar.cookie": {
+          "type": "string",
+          "default": "",
+          "description": "Optional session cookie for authentication."
+        }
+      }
     }
   },
   "dependencies": {

@@ -29,17 +29,33 @@ This Visual Studio Code extension synchronizes issues from the SonarQube service
 
 ## Configuration
 
-Before using the extension, configure the SonarQube connection settings in your `settings.json`:
+The extension supports two ways to configure the SonarQube settings. It will prioritize the `sonar.json` file if it exists in the workspace root.
+
+### Method 1: Workspace Settings (Recommended)
+
+Add the following to your VS Code `settings.json`:
 
 ```json
 {
-    "sonar.host": "https://sonar.xpaas.lenovo.com/sonar/",
+    "sonar.host": "https://sonar.example.com/",
     "sonar.token": "your-sonar-token",
-    "sonar.projectKey": "gitlab-47218"
+    "sonar.projectKey": "your-project-key",
+    "sonar.cookie": ""
 }
 ```
 
-Replace `your-sonar-token` with your actual SonarQube token.
+### Method 2: Local `sonar.json` File
+
+Create a file named `sonar.json` in your workspace root directory with the following content:
+
+```json
+{
+  "host": "https://sonar.example.com/",
+  "token": "your-sonar-token",
+  "projectKey": "your-project-key",
+  "cookie": ""
+}
+```
 
 ## Usage
 
