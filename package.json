@@ -3,7 +3,22 @@
   "displayName": "Sonar Sync Extension",
   "description": "A Visual Studio Code extension that synchronizes issues from SonarQube to the Problems panel.",
   "version": "0.1.0",
-  "publisher": "your-name",
+  "publisher": "sonar-sync",
+  "categories": [
+    "Linters",
+    "Other"
+  ],
+  "keywords": [
+    "sonarqube",
+    "sonar",
+    "quality",
+    "lint"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/sonar-sync-extension"
+  },
   "engines": {
     "vscode": "^1.60.0"
   },
