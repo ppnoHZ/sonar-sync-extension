@@ -1,0 +1,73 @@
+{
+  "name": "sonar-sync-extension",
+  "displayName": "Sonar Sync Extension",
+  "description": "A Visual Studio Code extension that synchronizes issues from SonarQube to the Problems panel.",
+  "version": "0.1.0",
+  "publisher": "your-name",
+  "engines": {
+    "vscode": "^1.60.0"
+  },
+  "activationEvents": [
+    "onCommand:sonarSync.start",
+    "onView:sonarIssuesByAuthor"
+  ],
+  "main": "./dist/extension.js",
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./tsconfig.json",
+    "watch": "tsc -watch -p ./tsconfig.json"
+  },
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "sonar-sync-explorer",
+          "title": "Sonar Sync",
+          "icon": "$(radar)"
+        }
+      ]
+    },
+    "views": {
+      "sonar-sync-explorer": [
+        {
+          "id": "sonarIssuesByAuthor",
+          "name": "Issues by Author"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "sonarSync.start",
+        "title": "Start Sonar Sync",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "sonarSync.toggleGrouping",
+        "title": "Toggle Grouping Mode (Author/File)",
+        "icon": "$(list-unordered)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "sonarSync.toggleGrouping",
+          "when": "view == sonarIssuesByAuthor",
+          "group": "navigation@1"
+        },
+        {
+          "command": "sonarSync.start",
+          "when": "view == sonarIssuesByAuthor",
+          "group": "navigation@2"
+        }
+      ]
+    }
+  },
+  "dependencies": {
+    "axios": "^0.21.1"
+  },
+  "devDependencies": {
+    "@types/node": "^14.x",
+    "@types/vscode": "^1.60.0",
+    "typescript": "^4.3.2"
+  }
+}
