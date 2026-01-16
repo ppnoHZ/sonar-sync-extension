@@ -24,6 +24,18 @@ export interface SonarConfig {
     queryParams?: Record<string, string>;
 }
 
+export interface PagingInfo {
+    pageIndex: number;
+    pageSize: number;
+    total: number;
+}
+
+export interface SonarIssuesResponse {
+    issues: Issue[];
+    paging: PagingInfo;
+    branch?: string;
+}
+
 export interface Diagnostic {
     severity: number;
     message: string;

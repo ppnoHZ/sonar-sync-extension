@@ -30,9 +30,9 @@ export function activate(context: vscode.ExtensionContext) {
     issueTreeViewProvider
   )
 
-  const syncIssues = async () => {
-    Logger.log('Syncing issues...')
-    statusBarItem.text = '$(sync~spin) Sonar: Syncing...'
+  const syncIssues = async (page: number = 1) => {
+    Logger.log(`Syncing issues for page ${page}...`)
+    statusBarItem.text = `$(sync~spin) Sonar: Syncing (Page ${page})...`
     statusBarItem.show()
 
     await vscode.window.withProgress(
@@ -42,8 +42,9 @@ export function activate(context: vscode.ExtensionContext) {
         cancellable: false
       },
       async (progress) => {
-        progress.report({ message: 'Fetching issues from SonarQube...' })
+        progress.report({ message: `Fetching issues from SonarQube (Page ${page})...` })
         try {
+          const config = getSonarConfig()
           const sonarClient = new SonarClient(
             config.host,
             config.token,
@@ -51,15 +52,16 @@ export function activate(context: vscode.ExtensionContext) {
             config.cookie,
             config.queryParams
           )
-          const issues = await sonarClient.fetchIssues()
-          Logger.log(`Successfully fetched ${issues.length} issues`)
+          const response = await sonarClient.fetchIssues(page)
+          const issues = response.issues
+          Logger.log(`Successfully fetched ${issues.length} issues (Total: ${response.paging.total})`)
 
           diagnosticManager.updateDiagnostics(issues)
-          issueTreeViewProvider.refresh(issues)
+          issueTreeViewProvider.refresh(issues, response.paging, response.branch)
 
-          statusBarItem.text = `$(bug) Sonar: ${issues.length}`
+          statusBarItem.text = `$(bug) Sonar: ${response.paging.total}`
           vscode.window.showInformationMessage(
-            `Sonar Sync: Found ${issues.length} issues.`
+            `Sonar Sync: Found ${response.paging.total} issues. Showing page ${page}.`
           )
         } catch (error) {
           Logger.error('Failed to fetch sonar issues', error)
@@ -72,7 +74,32 @@ export function activate(context: vscode.ExtensionContext) {
 
   const fetchIssuesCommand = vscode.commands.registerCommand(
     'sonarSync.start',
-    syncIssues
+    () => syncIssues(1)
+  )
+
+  const nextPageCommand = vscode.commands.registerCommand(
+    'sonarSync.nextPage',
+    () => {
+      const paging = issueTreeViewProvider.getPaging()
+      const totalPages = Math.ceil(paging.total / paging.pageSize)
+      if (paging.pageIndex < totalPages) {
+        syncIssues(paging.pageIndex + 1)
+      } else {
+        vscode.window.showInformationMessage('Already on the last page.')
+      }
+    }
+  )
+
+  const prevPageCommand = vscode.commands.registerCommand(
+    'sonarSync.prevPage',
+    () => {
+      const paging = issueTreeViewProvider.getPaging()
+      if (paging.pageIndex > 1) {
+        syncIssues(paging.pageIndex - 1)
+      } else {
+        vscode.window.showInformationMessage('Already on the first page.')
+      }
+    }
   )
 
   const toggleGroupingCommand = vscode.commands.registerCommand(
@@ -85,7 +112,21 @@ export function activate(context: vscode.ExtensionContext) {
     }
   )
 
-  context.subscriptions.push(fetchIssuesCommand, toggleGroupingCommand)
+  context.subscriptions.push(
+    fetchIssuesCommand,
+    nextPageCommand,
+    prevPageCommand,
+    toggleGroupingCommand
+  )
+
+  // Auto-sync on configuration change
+  const configChangeListener = vscode.workspace.onDidChangeConfiguration((e) => {
+    if (e.affectsConfiguration('sonar')) {
+      Logger.log('Configuration changed, re-syncing...')
+      syncIssues(1)
+    }
+  })
+  context.subscriptions.push(configChangeListener)
 
   // Auto-sync on activation (panel open)
   syncIssues()

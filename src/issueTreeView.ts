@@ -1,17 +1,25 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { Issue } from './types';
+import { Issue, PagingInfo } from './types';
 
 export class SonarIssueTreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
     private _onDidChangeTreeData: vscode.EventEmitter<TreeItem | undefined | void> = new vscode.EventEmitter<TreeItem | undefined | void>();
     readonly onDidChangeTreeData: vscode.Event<TreeItem | undefined | void> = this._onDidChangeTreeData.event;
 
     private issues: Issue[] = [];
+    private paging: PagingInfo = { pageIndex: 1, pageSize: 100, total: 0 };
+    private branchInfo?: string;
     private groupingMode: 'author' | 'file' = 'author';
 
-    refresh(issues?: Issue[]): void {
+    refresh(issues?: Issue[], paging?: PagingInfo, branch?: string): void {
         if (issues) {
             this.issues = issues;
+        }
+        if (paging) {
+            this.paging = paging;
+        }
+        if (branch !== undefined) {
+            this.branchInfo = branch;
         }
         this._onDidChangeTreeData.fire();
     }
@@ -25,12 +33,23 @@ export class SonarIssueTreeDataProvider implements vscode.TreeDataProvider<TreeI
         return this.groupingMode;
     }
 
+    getPaging(): PagingInfo {
+        return this.paging;
+    }
+
     getTreeItem(element: TreeItem): vscode.TreeItem {
         return element;
     }
 
     getChildren(element?: TreeItem): Thenable<TreeItem[]> {
         if (!element) {
+            const items: TreeItem[] = [];
+            
+            // Add Pagination Item if total > 0
+            if (this.paging.total > 0) {
+                items.push(new PaginationItem(this.paging, this.branchInfo));
+            }
+
             if (this.groupingMode === 'author') {
                 const authorsMap = new Map<string, Issue[]>();
                 this.issues.forEach(issue => {
@@ -41,11 +60,9 @@ export class SonarIssueTreeDataProvider implements vscode.TreeDataProvider<TreeI
                     authorsMap.get(author)!.push(issue);
                 });
 
-                return Promise.resolve(
-                    Array.from(authorsMap.keys()).sort().map(author => 
-                        new AuthorItem(author, authorsMap.get(author)!.length, authorsMap.get(author)!)
-                    )
-                );
+                items.push(...Array.from(authorsMap.keys()).sort().map(author => 
+                    new AuthorItem(author, authorsMap.get(author)!.length, authorsMap.get(author)!)
+                ));
             } else {
                 const filesMap = new Map<string, Issue[]>();
                 this.issues.forEach(issue => {
@@ -56,12 +73,11 @@ export class SonarIssueTreeDataProvider implements vscode.TreeDataProvider<TreeI
                     filesMap.get(file)!.push(issue);
                 });
 
-                return Promise.resolve(
-                    Array.from(filesMap.keys()).sort().map(file => 
-                        new FileItem(file, filesMap.get(file)!.length, filesMap.get(file)!)
-                    )
-                );
+                items.push(...Array.from(filesMap.keys()).sort().map(file => 
+                    new FileItem(file, filesMap.get(file)!.length, filesMap.get(file)!)
+                ));
             }
+            return Promise.resolve(items);
         }
 
         if (element instanceof AuthorItem) {
@@ -76,7 +92,18 @@ export class SonarIssueTreeDataProvider implements vscode.TreeDataProvider<TreeI
     }
 }
 
-type TreeItem = AuthorItem | FileItem | IssueItem;
+type TreeItem = AuthorItem | FileItem | IssueItem | PaginationItem;
+
+class PaginationItem extends vscode.TreeItem {
+    constructor(paging: PagingInfo, branchInfo?: string) {
+        const totalPages = Math.ceil(paging.total / paging.pageSize);
+        const label = branchInfo ? `${branchInfo} - Page ${paging.pageIndex} of ${totalPages}` : `Page ${paging.pageIndex} of ${totalPages}`;
+        super(label, vscode.TreeItemCollapsibleState.None);
+        this.description = `(Total: ${paging.total})`;
+        this.contextValue = 'pagination';
+        this.iconPath = new vscode.ThemeIcon('git-branch');
+    }
+}
 
 class AuthorItem extends vscode.TreeItem {
     constructor(

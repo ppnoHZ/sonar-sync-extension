@@ -62,19 +62,39 @@
         "command": "sonarSync.toggleGrouping",
         "title": "Toggle Grouping Mode (Author/File)",
         "icon": "$(list-unordered)"
+      },
+      {
+        "command": "sonarSync.nextPage",
+        "title": "Next Page",
+        "icon": "$(arrow-right)"
+      },
+      {
+        "command": "sonarSync.prevPage",
+        "title": "Previous Page",
+        "icon": "$(arrow-left)"
       }
     ],
     "menus": {
       "view/title": [
         {
-          "command": "sonarSync.toggleGrouping",
+          "command": "sonarSync.prevPage",
           "when": "view == sonarIssuesByAuthor",
           "group": "navigation@1"
         },
         {
-          "command": "sonarSync.start",
+          "command": "sonarSync.nextPage",
           "when": "view == sonarIssuesByAuthor",
           "group": "navigation@2"
+        },
+        {
+          "command": "sonarSync.toggleGrouping",
+          "when": "view == sonarIssuesByAuthor",
+          "group": "navigation@3"
+        },
+        {
+          "command": "sonarSync.start",
+          "when": "view == sonarIssuesByAuthor",
+          "group": "navigation@4"
         }
       ]
     },
