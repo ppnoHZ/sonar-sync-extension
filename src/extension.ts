@@ -14,12 +14,6 @@ export function activate(context: vscode.ExtensionContext) {
     `Loaded config: host=${config.host}, projectKey=${config.projectKey}`
   )
 
-  const sonarClient = new SonarClient(
-    config.host,
-    config.token,
-    config.projectKey,
-    config.cookie
-  )
   const diagnosticManager = new DiagnosticManager()
   const issueTreeViewProvider = new SonarIssueTreeDataProvider()
 
@@ -44,27 +38,36 @@ export function activate(context: vscode.ExtensionContext) {
     await vscode.window.withProgress(
       {
         location: vscode.ProgressLocation.Notification,
-        title: "Sonar Sync",
+        title: 'Sonar Sync',
         cancellable: false
       },
       async (progress) => {
-        progress.report({ message: "Fetching issues from SonarQube..." });
+        progress.report({ message: 'Fetching issues from SonarQube...' })
         try {
+          const sonarClient = new SonarClient(
+            config.host,
+            config.token,
+            config.projectKey,
+            config.cookie,
+            config.queryParams
+          )
           const issues = await sonarClient.fetchIssues()
           Logger.log(`Successfully fetched ${issues.length} issues`)
-          
+
           diagnosticManager.updateDiagnostics(issues)
           issueTreeViewProvider.refresh(issues)
-          
+
           statusBarItem.text = `$(bug) Sonar: ${issues.length}`
-          vscode.window.showInformationMessage(`Sonar Sync: Found ${issues.length} issues.`)
+          vscode.window.showInformationMessage(
+            `Sonar Sync: Found ${issues.length} issues.`
+          )
         } catch (error) {
           Logger.error('Failed to fetch sonar issues', error)
           statusBarItem.text = '$(error) Sonar: Sync Error'
           vscode.window.showErrorMessage(`Sonar Sync failed: ${error}`)
         }
       }
-    );
+    )
   }
 
   const fetchIssuesCommand = vscode.commands.registerCommand(

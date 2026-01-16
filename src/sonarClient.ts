@@ -7,17 +7,19 @@ export class SonarClient {
     private token: string;
     private projectKey: string;
     private cookie?: string;
+    private queryParams?: Record<string, string>;
 
-    constructor(host: string, token: string, projectKey: string, cookie?: string) {
+    constructor(host: string, token: string, projectKey: string, cookie?: string, queryParams?: Record<string, string>) {
         this.host = host;
         this.token = token;
         this.projectKey = projectKey;
         this.cookie = cookie;
+        this.queryParams = queryParams;
     }
 
     public async fetchIssues(): Promise<Issue[]> {
-        const url = `${this.host}api/issues/search?componentKeys=${this.projectKey}`;
-        Logger.log(`Fetching issues from: ${url}`);
+        const url = `${this.host}api/issues/search`;
+        Logger.log(`Fetching issues from: ${url} for project: ${this.projectKey}`);
 
         const headers: any = {
             'Authorization': `Bearer ${this.token}`
@@ -27,8 +29,13 @@ export class SonarClient {
             headers['Cookie'] = this.cookie;
         }
 
+        const params = {
+            componentKeys: this.projectKey,
+            ...this.queryParams
+        };
+
         try {
-            const response = await axios.get(url, { headers });
+            const response = await axios.get(url, { headers, params });
             Logger.log(`Sonar API response status: ${response.status}`);
             
             if (!response.data || !response.data.issues) {

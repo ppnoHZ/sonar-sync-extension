@@ -22,6 +22,7 @@ export function getSonarConfig(): SonarConfig {
         host: config.get<string>('host') || '',
         token: config.get<string>('token') || '',
         projectKey: config.get<string>('projectKey') || '',
-        cookie: config.get<string>('cookie') || ''
+        cookie: config.get<string>('cookie') || '',
+        queryParams: config.get<Record<string, string>>('queryParams') || {}
     };
 }

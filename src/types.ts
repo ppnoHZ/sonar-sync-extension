@@ -21,6 +21,7 @@ export interface SonarConfig {
     token: string;
     projectKey: string;
     cookie?: string;
+    queryParams?: Record<string, string>;
 }
 
 export interface Diagnostic {

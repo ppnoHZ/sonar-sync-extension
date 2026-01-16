@@ -47,7 +47,8 @@
       "sonar-sync-explorer": [
         {
           "id": "sonarIssuesByAuthor",
-          "name": "Issues by Author"
+          "name": "Issues by Author",
+          "icon": "$(list-ordered)"
         }
       ]
     },
@@ -99,6 +100,11 @@
           "type": "string",
           "default": "",
           "description": "Optional session cookie for authentication."
+        },
+        "sonar.queryParams": {
+          "type": "object",
+          "default": {},
+          "description": "Additional query parameters for the SonarQube issue search API (e.g., {\"types\": \"BUG\", \"severities\": \"CRITICAL\"})."
         }
       }
     }
