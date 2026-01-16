@@ -57,7 +57,10 @@ Create a file named `sonar.json` in your workspace root directory with the follo
   "host": "https://sonar.example.com/",
   "token": "your-sonar-token",
   "projectKey": "your-project-key",
-  "cookie": ""
+  "cookie": "",
+  "queryParams": {
+    "branch": "master"
+  }
 }
 ```
 
