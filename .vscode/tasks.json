@@ -8,6 +8,13 @@
             "isBackground": true,
             "problemMatcher": "$tsc-watch",
             "label": "npm: watch"
+        },
+        {
+            "type": "npm",
+            "script": "package",
+            "group": "build",
+            "label": "npm: package",
+            "detail": "Packages the extension into a .vsix file"
         }
     ]
 }

@@ -27,6 +27,10 @@ This Visual Studio Code extension synchronizes issues from the SonarQube service
 
 4. Open the project in Visual Studio Code.
 
+## Development Notes
+
+- **Important**: You must use `npm` to install dependencies. Using other package managers like `pnpm` or `yarn` may cause errors when packaging the extension with `vsce`.
+
 ## Configuration
 
 The extension supports two ways to configure the SonarQube settings. It will prioritize the `sonar.json` file if it exists in the workspace root.

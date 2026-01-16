@@ -40,7 +40,7 @@ export class SonarClient {
             key: issue.key,
             severity: issue.severity,
             message: issue.message,
-            file: issue.component,
+            file: issue.component.split(':')[1],
             line: issue.line,
             status: issue.status,
             // Assuming startLine/endLine might be needed by diagnosticManager

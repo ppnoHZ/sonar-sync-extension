@@ -11,6 +11,8 @@
             "outFiles": [
                 "${workspaceFolder}/dist/**/*.js"
             ],
+            "sourceMaps": true,
+            "smartStep": true,
             "preLaunchTask": "npm: watch"
         }
     ]
