@@ -36,6 +36,20 @@ export interface SonarIssuesResponse {
     branch?: string;
 }
 
+export interface SonarBranch {
+    name: string;
+    isMain: boolean;
+    type: string;
+    status?: {
+        qualityGateStatus: string;
+    };
+    analysisDate?: string;
+}
+
+export interface SonarBranchesResponse {
+    branches: SonarBranch[];
+}
+
 export interface Diagnostic {
     severity: number;
     message: string;

@@ -72,10 +72,20 @@
         "command": "sonarSync.prevPage",
         "title": "Previous Page",
         "icon": "$(arrow-left)"
+      },
+      {
+        "command": "sonarSync.selectBranch",
+        "title": "Select Branch",
+        "icon": "$(git-branch)"
       }
     ],
     "menus": {
       "view/title": [
+        {
+          "command": "sonarSync.selectBranch",
+          "when": "view == sonarIssuesByAuthor",
+          "group": "navigation@0"
+        },
         {
           "command": "sonarSync.prevPage",
           "when": "view == sonarIssuesByAuthor",

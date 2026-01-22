@@ -45,23 +45,31 @@ export function activate(context: vscode.ExtensionContext) {
         progress.report({ message: `Fetching issues from SonarQube (Page ${page})...` })
         try {
           const config = getSonarConfig()
+          const selectedBranch = issueTreeViewProvider.getSelectedBranch()
+          
+          const queryParams = { ...config.queryParams }
+          if (selectedBranch) {
+            queryParams.branch = selectedBranch
+          }
+
           const sonarClient = new SonarClient(
             config.host,
             config.token,
             config.projectKey,
             config.cookie,
-            config.queryParams
+            queryParams
           )
           const response = await sonarClient.fetchIssues(page)
           const issues = response.issues
-          Logger.log(`Successfully fetched ${issues.length} issues (Total: ${response.paging.total})`)
+          Logger.log(`Successfully fetched ${issues.length} issues (Total: ${response.paging.total}, Branch: ${selectedBranch || 'default'})`)
 
           diagnosticManager.updateDiagnostics(issues)
           issueTreeViewProvider.refresh(issues, response.paging, response.branch)
 
-          statusBarItem.text = `$(bug) Sonar: ${response.paging.total}`
+          const branchSuffix = selectedBranch ? ` (${selectedBranch})` : '';
+          statusBarItem.text = `$(bug) Sonar: ${response.paging.total}${branchSuffix}`
           vscode.window.showInformationMessage(
-            `Sonar Sync: Found ${response.paging.total} issues. Showing page ${page}.`
+            `Sonar Sync: Found ${response.paging.total} issues on ${selectedBranch || 'default branch'}. Showing page ${page}.`
           )
         } catch (error) {
           Logger.error('Failed to fetch sonar issues', error)
@@ -75,6 +83,46 @@ export function activate(context: vscode.ExtensionContext) {
   const fetchIssuesCommand = vscode.commands.registerCommand(
     'sonarSync.start',
     () => syncIssues(1)
+  )
+
+  const selectBranchCommand = vscode.commands.registerCommand(
+    'sonarSync.selectBranch',
+    async () => {
+      try {
+        const config = getSonarConfig()
+        const sonarClient = new SonarClient(
+          config.host,
+          config.token,
+          config.projectKey,
+          config.cookie,
+          config.queryParams
+        )
+        
+        const response = await sonarClient.fetchBranches()
+        if (response.branches.length === 0) {
+          vscode.window.showInformationMessage('No branches found for this project.')
+          return
+        }
+
+        const items = response.branches.map(b => ({
+          label: b.name,
+          description: b.isMain ? 'Main' : '',
+          detail: b.status?.qualityGateStatus ? `Quality Gate: ${b.status.qualityGateStatus}` : undefined
+        }))
+
+        const selection = await vscode.window.showQuickPick(items, {
+          placeHolder: 'Select a branch to filter issues'
+        })
+
+        if (selection) {
+          issueTreeViewProvider.setSelectedBranch(selection.label)
+          syncIssues(1)
+        }
+      } catch (error) {
+        Logger.error('Failed to fetch branches', error)
+        vscode.window.showErrorMessage(`Failed to fetch branches: ${error}`)
+      }
+    }
   )
 
   const nextPageCommand = vscode.commands.registerCommand(
@@ -114,6 +162,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(
     fetchIssuesCommand,
+    selectBranchCommand,
     nextPageCommand,
     prevPageCommand,
     toggleGroupingCommand

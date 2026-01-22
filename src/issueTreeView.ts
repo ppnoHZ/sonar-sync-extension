@@ -9,6 +9,7 @@ export class SonarIssueTreeDataProvider implements vscode.TreeDataProvider<TreeI
     private issues: Issue[] = [];
     private paging: PagingInfo = { pageIndex: 1, pageSize: 100, total: 0 };
     private branchInfo?: string;
+    private selectedBranch?: string;
     private groupingMode: 'author' | 'file' = 'author';
 
     refresh(issues?: Issue[], paging?: PagingInfo, branch?: string): void {
@@ -22,6 +23,14 @@ export class SonarIssueTreeDataProvider implements vscode.TreeDataProvider<TreeI
             this.branchInfo = branch;
         }
         this._onDidChangeTreeData.fire();
+    }
+
+    setSelectedBranch(branch: string | undefined): void {
+        this.selectedBranch = branch;
+    }
+
+    getSelectedBranch(): string | undefined {
+        return this.selectedBranch;
     }
 
     setGroupingMode(mode: 'author' | 'file'): void {

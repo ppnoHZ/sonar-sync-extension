@@ -1,13 +1,14 @@
-import axios from 'axios';
-import { Issue, SonarIssuesResponse } from './types';
+import axios, { AxiosInstance } from 'axios';
+import { SonarIssuesResponse, SonarBranchesResponse } from './types';
 import { Logger } from './logger';
 
 export class SonarClient {
-    private host: string;
-    private token: string;
-    private projectKey: string;
-    private cookie?: string;
-    private queryParams?: Record<string, string>;
+    private readonly host: string;
+    private readonly token: string;
+    private readonly projectKey: string;
+    private readonly cookie?: string;
+    private readonly queryParams?: Record<string, string>;
+    private readonly axiosInstance: AxiosInstance;
 
     constructor(host: string, token: string, projectKey: string, cookie?: string, queryParams?: Record<string, string>) {
         this.host = host;
@@ -15,19 +16,23 @@ export class SonarClient {
         this.projectKey = projectKey;
         this.cookie = cookie;
         this.queryParams = queryParams;
+
+        this.axiosInstance = axios.create({
+            baseURL: this.host
+        });
+
+        this.axiosInstance.interceptors.request.use((config) => {
+            config.headers['Authorization'] = `Bearer ${this.token}`;
+            if (this.cookie) {
+                config.headers['Cookie'] = this.cookie;
+            }
+            return config;
+        });
     }
 
     public async fetchIssues(page: number = 1, pageSize: number = 100): Promise<SonarIssuesResponse> {
-        const url = `${this.host}api/issues/search`;
-        Logger.log(`Fetching issues from: ${url} for project: ${this.projectKey} (Page: ${page}, PageSize: ${pageSize})`);
-
-        const headers: any = {
-            'Authorization': `Bearer ${this.token}`
-        };
-
-        if (this.cookie) {
-            headers['Cookie'] = this.cookie;
-        }
+        const url = `api/issues/search`;
+        Logger.log(`Fetching issues from: ${this.host}${url} for project: ${this.projectKey} (Page: ${page}, PageSize: ${pageSize})`);
 
         const params = {
             componentKeys: this.projectKey,
@@ -37,10 +42,10 @@ export class SonarClient {
         };
 
         try {
-            const response = await axios.get(url, { headers, params });
+            const response = await this.axiosInstance.get(url, { params });
             Logger.log(`Sonar API response status: ${response.status}`);
             
-            if (!response.data || !response.data.issues) {
+            if (!response.data?.issues) {
                 Logger.warn('Sonar API returned empty or invalid data');
                 return { issues: [], paging: { pageIndex: page, pageSize, total: 0 } };
             }
@@ -73,9 +78,11 @@ export class SonarClient {
 
             // Fallback to queryParams if not found in components
             if (!branchInfo) {
-                branchInfo = this.queryParams?.branch || this.queryParams?.pullRequest 
-                    ? (this.queryParams.branch ? `Branch: ${this.queryParams.branch}` : `PR: ${this.queryParams.pullRequest}`)
-                    : undefined;
+                if (this.queryParams?.branch) {
+                    branchInfo = `Branch: ${this.queryParams.branch}`;
+                } else if (this.queryParams?.pullRequest) {
+                    branchInfo = `PR: ${this.queryParams.pullRequest}`;
+                }
             }
 
             return {
@@ -89,6 +96,32 @@ export class SonarClient {
             };
         } catch (error) {
             Logger.error('Error fetching from Sonar API', error);
+            throw error;
+        }
+    }
+
+    public async fetchBranches(): Promise<SonarBranchesResponse> {
+        const url = `api/project_branches/list`;
+        Logger.log(`Fetching branches from: ${this.host}${url} for project: ${this.projectKey}`);
+
+        const params = {
+            project: this.projectKey
+        };
+
+        try {
+            const response = await this.axiosInstance.get(url, { params });
+            Logger.log(`Sonar API response status: ${response.status}`);
+            
+            if (!response.data?.branches) {
+                Logger.warn('Sonar API returned empty or invalid branches data');
+                return { branches: [] };
+            }
+
+            return {
+                branches: response.data.branches
+            };
+        } catch (error) {
+            Logger.error('Error fetching branches from Sonar API', error);
             throw error;
         }
     }
